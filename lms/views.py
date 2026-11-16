@@ -1,29 +1,9 @@
-from rest_framework import viewsets, generics, permissions
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework import viewsets, generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
-
-
-class IsModerator(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.groups.filter(name='moderators').exists()
-
-
-class IsOwner(BasePermission):
-    def has_object_permission(self, request, view, obj):
-        return obj.owner == request.user
-
-
-
-
-class IsModeratorOrOwner(BasePermission):
-    def has_permission(self, request, view):
-        return request.user.is_authenticated
-
-    def has_object_permission(self, request, view, obj):
-        is_moderator = request.user.groups.filter(name='moderators').exists()
-        is_owner = obj.owner == request.user
-        return is_moderator or is_owner
+from .permissions import IsOwner, IsModeratorOrOwner, IsNotModerator
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -32,11 +12,18 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'create':
-            return [IsAuthenticated()]
-        elif self.action == 'destroy':
+            # Модератор НЕ может создавать курсы
+            return [IsAuthenticated(), IsNotModerator()]
+        elif self.action == 'retrieve':
+            # Детальный просмотр только для владельца
             return [IsAuthenticated(), IsOwner()]
         elif self.action in ['update', 'partial_update']:
+            # Редактировать может модератор ИЛИ владелец
             return [IsAuthenticated(), IsModeratorOrOwner()]
+        elif self.action == 'destroy':
+            # Удалять может только владелец
+            return [IsAuthenticated(), IsOwner()]
+        # Список курсов — любой авторизованный
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
@@ -49,7 +36,9 @@ class LessonListCreateView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAuthenticated()]
+            # Модератор НЕ может создавать уроки
+            return [IsAuthenticated(), IsNotModerator()]
+        # Список уроков — любой авторизованный
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
@@ -62,7 +51,12 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method == 'DELETE':
+            # Удалять может только владелец
             return [IsAuthenticated(), IsOwner()]
         elif self.request.method in ['PUT', 'PATCH']:
+            # Редактировать может модератор ИЛИ владелец
             return [IsAuthenticated(), IsModeratorOrOwner()]
+        elif self.request.method == 'GET':
+            # Детальный просмотр только для владельца
+            return [IsAuthenticated(), IsOwner()]
         return [IsAuthenticated()]
