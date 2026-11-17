@@ -1,0 +1,19 @@
+Name                                               Stmts   Miss  Cover
+----------------------------------------------------------------------
+lms/__init__.py                                        0      0   100%
+lms/admin.py                                           1      0   100%
+lms/apps.py                                            3      0   100%
+lms/migrations/0001_initial.py                         6      0   100%
+lms/migrations/0002_course_owner_lesson_owner.py       6      0   100%
+lms/migrations/0003_subscription.py                    6      0   100%
+lms/migrations/__init__.py                             0      0   100%
+lms/models.py                                         29      3    90%
+lms/paginators.py                                      5      0   100%
+lms/permissions.py                                    19      2    89%
+lms/serializers.py                                    22      5    77%
+lms/tests.py                                          74      0   100%
+lms/urls.py                                            6      0   100%
+lms/validators.py                                      4      0   100%
+lms/views.py                                          60     12    80%
+----------------------------------------------------------------------
+TOTAL                                                241     22    91%
