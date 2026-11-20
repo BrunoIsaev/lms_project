@@ -6,6 +6,7 @@ from .models import Course, Lesson, Subscription
 from .serializers import CourseSerializer, LessonSerializer
 from .permissions import IsOwner, IsModeratorOrOwner, IsNotModerator
 from .paginators import CourseLessonPagination
+from .tasks import send_course_update_notification
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -32,6 +33,10 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
+    def perform_update(self, serializer):
+        serializer.save()
+        send_course_update_notification.delay(self.get_object().id)
+
 
 class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.all()
@@ -49,9 +54,15 @@ class LessonListCreateView(generics.ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
+
 class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+
+    def perform_update(self, serializer):
+        serializer.save()
+        course = self.get_object().course
+        send_course_update_notification.delay(course.id)
 
     def get_permissions(self):
         if self.request.method == 'DELETE':

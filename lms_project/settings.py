@@ -116,3 +116,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+
+# --- Celery ---
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = USE_TZ
+
+# Почта — для теста письма печатаются в консоль воркера
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@lms.com'
+
+# --- Celery Beat ---
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'block-inactive-users-every-day': {
+        'task': 'lms.tasks.block_inactive_users',
+        'schedule': crontab(hour=3, minute=0),  # каждый день в 03:00 UTC
+    },
+}
